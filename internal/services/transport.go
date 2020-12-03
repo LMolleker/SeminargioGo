@@ -63,9 +63,18 @@ func findByID(s BeerService) gin.HandlerFunc {
 			fmt.Println(err)
 			os.Exit(1)
 		}
-		c.JSON(http.StatusOK, gin.H{
-			"Beer": s.FindByID(id),
-		})
+		beer, err := s.FindByID(id)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"Message": "Beer could not be found",
+			})
+			fmt.Println(err)
+			os.Exit(1)
+		} else {
+			c.JSON(http.StatusOK, gin.H{
+				"Beer": beer,
+			})
+		}
 	}
 }
 
@@ -86,27 +95,54 @@ func update(s BeerService) gin.HandlerFunc {
 			fmt.Println(err)
 			os.Exit(1)
 		}
-		s.Update(id, beer)
-		c.JSON(http.StatusOK, gin.H{
-			"Message": "Beer modified",
-		})
+		id, err = s.Update(id, beer)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"Message": "Beer could not be updated",
+			})
+			fmt.Println(err)
+			os.Exit(1)
+		} else {
+			c.JSON(http.StatusOK, gin.H{
+				"Message": "Beer updated",
+			})
+		}
 	}
 }
 
 func delete(s BeerService) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		s.Delete(strconv.Atoi(c.Param("id")))
-		c.JSON(http.StatusOK, gin.H{
-			"Message": "Beer deleted",
-		})
+		id, err := strconv.Atoi(c.Param("id"))
+		_, err = s.Delete(id)
+		//ID, err := s.Delete(strconv.Atoi(c.Param("id")))
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"Message": "Beer could not be deleted",
+			})
+			fmt.Println(err)
+			os.Exit(1)
+		} else {
+			c.JSON(http.StatusOK, gin.H{
+				"Message": "Beer deleted",
+			})
+		}
 	}
 }
 
 func findAll(s BeerService) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{
-			"Data": s.FindAll(),
-		})
+		beers, err := s.FindAll()
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"Message": "Beers could not be found",
+			})
+			fmt.Println(err)
+			os.Exit(1)
+		} else {
+			c.JSON(http.StatusOK, gin.H{
+				"Data": beers,
+			})
+		}
 	}
 }
 
@@ -124,8 +160,15 @@ func insert(s BeerService) gin.HandlerFunc {
 		}
 		err = s.Insert(beer)
 		if err != nil {
-			fmt.Println("Error insert")
-			fmt.Println(err.Error())
+			c.JSON(http.StatusBadRequest, gin.H{
+				"Message": "Beers could not be inserted",
+			})
+			fmt.Println(err)
+			os.Exit(1)
+		} else {
+			c.JSON(http.StatusOK, gin.H{
+				"Message": "Beer inserted",
+			})
 		}
 	}
 }

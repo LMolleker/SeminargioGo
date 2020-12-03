@@ -10,10 +10,10 @@ import (
 //BeerService ...
 type BeerService interface {
 	Insert(Beer) error
-	FindByID(int) *Beer
-	Update(int, Beer) int
-	Delete(int, error) int
-	FindAll() []*Beer
+	FindByID(int) (*Beer, error)
+	Update(int, Beer) (int, error)
+	Delete(int) (int, error)
+	FindAll() ([]*Beer, error)
 }
 
 //Beer ...
@@ -53,11 +53,12 @@ func (s beerService) Insert(b Beer) error {
 }
 
 //Find beer by id ...
-func (s beerService) FindByID(ID int) *Beer {
+func (s beerService) FindByID(ID int) (*Beer, error) {
 	query := "SELECT * FROM beer WHERE id = :id"
 	smtCreate, err := s.db.Prepare(query)
 	if err != nil {
 		fmt.Println(err.Error())
+		return nil, err
 	}
 	fmt.Println(ID)
 	var id int
@@ -66,38 +67,43 @@ func (s beerService) FindByID(ID int) *Beer {
 	err = smtCreate.QueryRow(ID).Scan(&id, &name, &alcoholContent, &price)
 	if err != nil {
 		fmt.Println(err.Error())
+		return nil, err
 	}
 	if id > 0 {
-		return &Beer{id, name, alcoholContent, price}
+		return &Beer{id, name, alcoholContent, price}, nil
 	}
-	return nil
+	return nil, nil
 }
 
 //Update one beer ...
-func (s beerService) Update(ID int, b Beer) int {
+func (s beerService) Update(ID int, b Beer) (int, error) {
 	query := "UPDATE beer SET name = ?, alcohol_content = ?, price = ? WHERE id = :id"
 	stmtCreate, err := s.db.Prepare(query)
 	if err != nil {
 		fmt.Println(err.Error())
+		return 0, err
 	}
 	_, err = stmtCreate.Exec(b.Name, b.AlcoholContent, b.Price, ID)
 	if err != nil {
 		fmt.Println(err.Error())
+		return 0, err
 	}
-	return ID
+	return ID, nil
 }
 
 //Find all beers ...
-func (s beerService) FindAll() []*Beer {
+func (s beerService) FindAll() ([]*Beer, error) {
 	var beers []*Beer
 	query := "SELECT * FROM beer"
 	smtCreate, err := s.db.Prepare(query)
 	if err != nil {
 		fmt.Println(err.Error())
+		return nil, err
 	}
 	list, err := smtCreate.Query()
 	if err != nil {
 		fmt.Println(err.Error())
+		return nil, err
 	}
 	for list.Next() {
 		var id int
@@ -106,19 +112,21 @@ func (s beerService) FindAll() []*Beer {
 		list.Scan(&id, &name, &alcoholContent, &price)
 		beers = append(beers, &Beer{id, name, alcoholContent, price})
 	}
-	return beers
+	return beers, nil
 }
 
 //Delete beer ...
-func (s beerService) Delete(ID int, e error) int {
+func (s beerService) Delete(ID int) (int, error) {
 	query := "DELETE FROM beer WHERE id = :id"
 	stmtCreate, err := s.db.Prepare(query)
 	if err != nil {
 		fmt.Println(err.Error())
+		return 0, err
 	}
 	_, err = stmtCreate.Exec(ID)
 	if err != nil {
 		fmt.Println(err.Error())
+		return 0, err
 	}
-	return ID
+	return ID, nil
 }
